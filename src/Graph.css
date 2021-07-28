@@ -1,4 +1,6 @@
+/*Increased height of Graph Component
+  to make more clear visuals.*/
 perspective-viewer {
-  height: 50vh;
+  height: 70vh;
   width: 700px;
 }
