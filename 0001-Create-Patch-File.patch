@@ -1,0 +1,130 @@
+From 84ad7b97fcbe4378b7798fc99f47d86a0374b118 Mon Sep 17 00:00:00 2001
+From: Somanyu <somanyu.03samal@gmail.com>
+Date: Wed, 28 Jul 2021 23:01:58 +0530
+Subject: [PATCH] Create Patch File
+
+---
+ src/App.tsx   | 24 ++++++++++++++++++------
+ src/Graph.css |  4 +++-
+ src/Graph.tsx | 18 ++++++++++++++++--
+ 3 files changed, 37 insertions(+), 9 deletions(-)
+
+diff --git a/src/App.tsx b/src/App.tsx
+index 0728518..efe987f 100755
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -8,6 +8,7 @@ import './App.css';
+  */
+ interface IState {
+   data: ServerRespond[],
++  showGraph: boolean,
+ }
+ 
+ /**
+@@ -22,6 +23,7 @@ class App extends Component<{}, IState> {
+       // data saves the server responds.
+       // We use this state to parse data down to the child element (Graph) as element property
+       data: [],
++      showGraph: false,
+     };
+   }
+ 
+@@ -29,18 +31,28 @@ class App extends Component<{}, IState> {
+    * Render Graph react component with state.data parse as property data
+    */
+   renderGraph() {
+-    return (<Graph data={this.state.data}/>)
++    if (this.state.showGraph) {
++      return (<Graph data={this.state.data}/>)
++    }
+   }
+ 
+   /**
+    * Get new data from server and update the state with the new data
+    */
+   getDataFromServer() {
+-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
+-      // Update the state by creating a new array of data that consists of
+-      // Previous data in the state and the new data from server
+-      this.setState({ data: [...this.state.data, ...serverResponds] });
+-    });
++    let x = 0;
++    const interval = setInterval(() => {
++      DataStreamer.getData((serverResponds: ServerRespond[]) => {
++        // Update the state by creating a new array of data that consists of
++        // Previous data in the state and the new data from server
++        this.setState({ data: serverResponds, showGraph: true, });
++      });
++      x++;
++      if (x > 1000) {
++        clearInterval(interval);
++      }
++    }, 100);
++    
+   }
+ 
+   /**
+diff --git a/src/Graph.css b/src/Graph.css
+index c77c560..4fcabf7 100644
+--- a/src/Graph.css
++++ b/src/Graph.css
+@@ -1,4 +1,6 @@
++/*Increased height of Graph Component
++  to make more clear visuals.*/
+ perspective-viewer {
+-  height: 50vh;
++  height: 70vh;
+   width: 700px;
+ }
+\ No newline at end of file
+diff --git a/src/Graph.tsx b/src/Graph.tsx
+index ec1430e..a84e5e2 100644
+--- a/src/Graph.tsx
++++ b/src/Graph.tsx
+@@ -1,4 +1,9 @@
+ import React, { Component } from 'react';
++/**'@jpmorganchase'/perspective does not work with
++ * python3.x as it is not compatible, to make compatible
++ * we should config npm to use python2.x
++ * '@finos/perspective works well with python3.x' 
++*/
+ import { Table } from '@jpmorganchase/perspective';
+ import { ServerRespond } from './DataStreamer';
+ import './Graph.css';
+@@ -14,7 +19,7 @@ interface IProps {
+  * Perspective library adds load to HTMLElement prototype.
+  * This interface acts as a wrapper for Typescript compiler.
+  */
+-interface PerspectiveViewerElement {
++interface PerspectiveViewerElement extends HTMLElement {
+   load: (table: Table) => void,
+ }
+ 
+@@ -32,7 +37,7 @@ class Graph extends Component<IProps, {}> {
+ 
+   componentDidMount() {
+     // Get element to attach the table from the DOM.
+-    const elem: PerspectiveViewerElement = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
++    const elem = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
+ 
+     const schema = {
+       stock: 'string',
+@@ -49,6 +54,15 @@ class Graph extends Component<IProps, {}> {
+ 
+       // Add more Perspective configurations here.
+       elem.load(this.table);
++      elem.setAttribute('view', 'y_line');
++      elem.setAttribute('column-pivots', '["stock"]');
++      elem.setAttribute('row-pivots', '["timestamp"]');
++      elem.setAttribute('columns', '["top_ask_price"]');
++      elem.setAttribute('aggregates', `
++        {"stock":"distinct count",
++        "top_ask_price":"avg",
++        "top_bid_price":"avg",
++        "timestamp":"distinct count"}`);
+     }
+   }
+ 
+-- 
+2.29.2.windows.3
+
